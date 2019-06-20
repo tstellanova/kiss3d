@@ -5,9 +5,9 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 use std::sync::mpsc::Sender;
 
-use event::{Action, Key, Modifiers, MouseButton, WindowEvent};
+use event::{Action, Key, Modifiers, MouseButton, WindowEvent, TouchAction};
 use stdweb::web::event as webevent;
-use stdweb::web::event::{ConcreteEvent, IEvent, IKeyboardEvent, IMouseEvent, IUiEvent};
+use stdweb::web::event::{ConcreteEvent, IEvent, IKeyboardEvent, IMouseEvent, IUiEvent, ITouchEvent};
 use stdweb::web::{self, html_element::CanvasElement, IEventTarget, IHtmlElement, IParentNode};
 use stdweb::{unstable::TryInto, Reference};
 use window::AbstractCanvas;
@@ -153,6 +153,30 @@ impl AbstractCanvas for WebGLCanvas {
             edata.key_states[key as usize] = Action::Release;
         });
 
+        macro_rules! setup_touch_event {
+            ($Event: ident, $Action: ident, $data: ident) => {
+                let edata = $data.clone();
+                let _ = web::window().add_event_listener(move |e: webevent::$Event| {
+                    let mut edata = edata.borrow_mut();
+                    console!(log, format!("Found touch event: {:?}", e));
+                    for touch in e.changed_touches() {
+                        let _ = edata.pending_events.push(WindowEvent::Touch(
+                            touch.identifier(),
+                            TouchAction::$Action,
+                            touch.page_x() * hidpi_factor,
+                            touch.page_y() * hidpi_factor,
+                            translate_touch_modifiers(&e),
+                        ));
+                    }
+                });
+            }
+        };
+
+        setup_touch_event!(TouchCancel, Cancel, data);
+        setup_touch_event!(TouchEnd, End, data);
+        setup_touch_event!(TouchStart, Start, data);
+        setup_touch_event!(TouchMove, Move, data);
+
         WebGLCanvas { data, hidpi_factor }
     }
 
@@ -236,6 +260,24 @@ fn translate_mouse_modifiers<E: IMouseEvent>(event: &E) -> Modifiers {
 }
 
 fn translate_key_modifiers<E: IKeyboardEvent>(event: &E) -> Modifiers {
+    let mut res = Modifiers::empty();
+    if event.shift_key() {
+        res.insert(Modifiers::Shift)
+    }
+    if event.ctrl_key() {
+        res.insert(Modifiers::Control)
+    }
+    if event.alt_key() {
+        res.insert(Modifiers::Alt)
+    }
+    if event.meta_key() {
+        res.insert(Modifiers::Super)
+    }
+
+    res
+}
+
+fn translate_touch_modifiers<E: ITouchEvent>(event: &E) -> Modifiers {
     let mut res = Modifiers::empty();
     if event.shift_key() {
         res.insert(Modifiers::Shift)

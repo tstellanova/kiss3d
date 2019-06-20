@@ -1,10 +1,11 @@
 use camera::Camera;
-use event::{Action, Key, MouseButton, WindowEvent};
+use event::{Action, Key, MouseButton, WindowEvent, TouchAction};
 use na::{self, Isometry3, Matrix4, Perspective3, Point3, Translation3, Vector2, Vector3};
 use num::Zero;
 use resource::ShaderUniform;
 use std::f32;
 use window::Canvas;
+use std::collections::HashMap;
 
 /// First-person camera mode.
 ///
@@ -35,6 +36,8 @@ pub struct FirstPerson {
     inverse_proj_view: Matrix4<f32>,
     last_cursor_pos: Vector2<f32>,
     up_axis: Vector3<f32>,
+
+    touches: HashMap<i32, Vector2<f32>>,
 }
 
 impl FirstPerson {
@@ -71,6 +74,7 @@ impl FirstPerson {
             inverse_proj_view: na::zero(),
             last_cursor_pos: na::zero(),
             up_axis: Vector3::y(),
+            touches: HashMap::new(),
         };
 
         res.look_at(eye, at);
@@ -376,6 +380,24 @@ impl Camera for FirstPerson {
             WindowEvent::FramebufferSize(w, h) => {
                 self.projection.set_aspect(w as f32 / h as f32);
                 self.update_projviews();
+            }
+            WindowEvent::Touch(id, action, x, y, _) => {
+                match action {
+                    TouchAction::Cancel | TouchAction::End => {
+                        let _ = self.touches.remove(&id);
+                    },
+                    TouchAction::Start => {
+                        let _ = self.touches.insert(id, Vector2::new(x as f32, y as f32));
+                    },
+                    TouchAction::Move => {
+                        if self.touches.len() > 2 {
+                            if let Some(last_pos) = self.touches.get(&id).cloned() {
+                                let dpos = Vector2::new(x as f32, y as f32) - last_pos;
+                                self.handle_left_button_displacement(&dpos);
+                            }
+                        }
+                    }
+                }
             }
             _ => {}
         }

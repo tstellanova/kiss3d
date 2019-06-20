@@ -1,8 +1,9 @@
 use camera::Camera;
-use event::{Action, Key, MouseButton, WindowEvent, Modifiers};
+use event::{Action, Key, MouseButton, WindowEvent, Modifiers, TouchAction};
 use na::{self, Isometry3, Matrix4, Perspective3, Point3, Vector2, Vector3};
 use resource::ShaderUniform;
 use std::f32;
+use std::collections::HashMap;
 use window::Canvas;
 
 /// Arc-ball camera mode.
@@ -53,6 +54,8 @@ pub struct ArcBall {
     inverse_proj_view: Matrix4<f32>,
     last_cursor_pos: Vector2<f32>,
     up_axis: Vector3<f32>,
+
+    touches: HashMap<i32, Vector2<f32>>,
 }
 
 impl ArcBall {
@@ -93,6 +96,7 @@ impl ArcBall {
             inverse_proj_view: na::zero(),
             last_cursor_pos: na::zero(),
             up_axis: Vector3::y(),
+            touches: HashMap::new(),
         };
 
         res.look_at(eye, at);
@@ -367,6 +371,29 @@ impl Camera for ArcBall {
             WindowEvent::Key(key, Action::Press, _) if Some(key) == self.reset_key => {
                 self.at = Point3::origin();
                 self.update_projviews();
+            }
+            WindowEvent::Touch(id, action, x, y, _) => {
+                match action {
+                    TouchAction::Cancel | TouchAction::End => {
+                        let _ = self.touches.remove(&id);
+                    },
+                    TouchAction::Start => {
+                        let _ = self.touches.insert(id, Vector2::new(x as f32, y as f32));
+                    },
+                    TouchAction::Move => {
+                        if let Some(last_pos) = self.touches.get(&id).cloned() {
+                            let pos = Vector2::new(x as f32, y as f32);
+                            let dpos = pos - last_pos;
+                            self.touches.insert(id, pos);
+
+                            if self.touches.len() == 1 {
+                                self.handle_left_button_displacement(&dpos);
+                            } else {
+                                self.handle_scroll(dpos.norm() / 1000.0)
+                            }
+                        }
+                    }
+                }
             }
             WindowEvent::Scroll(_, off, _) => self.handle_scroll(off as f32),
             WindowEvent::FramebufferSize(w, h) => {

@@ -28,8 +28,10 @@ impl State for AppState {
             console!(log, format!("Found event: {:?}", event))
         }
 
-        let mut ui = window.conrod_ui_mut().set_widgets();
-        gui(&mut ui, &self.ids, &mut self.app)
+        let rot = UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.014);
+        self.c.prepend_to_local_rotation(&rot);
+//        let mut ui = window.conrod_ui_mut().set_widgets();
+//        gui(&mut ui, &self.ids, &mut self.app)
     }
 }
 
