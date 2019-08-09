@@ -17,12 +17,13 @@ impl Canvas {
     pub fn open(
         title: &str,
         hide: bool,
+        headless: bool,
         width: u32,
         height: u32,
         out_events: Sender<WindowEvent>,
     ) -> Self {
         Canvas {
-            canvas: CanvasImpl::open(title, hide, width, height, out_events),
+            canvas: CanvasImpl::open(title, hide, headless, width, height, out_events),
         }
     }
 
@@ -94,6 +95,7 @@ pub(crate) trait AbstractCanvas {
     fn open(
         title: &str,
         hide: bool,
+        headless: bool,
         width: u32,
         height: u32,
         out_events: Sender<WindowEvent>,

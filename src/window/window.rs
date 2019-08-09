@@ -9,7 +9,7 @@ use std::rc::Rc;
 use std::sync::mpsc::{self, Receiver};
 use std::time::Duration;
 use std::thread;
-use std::collections::HashMap;
+//use std::collections::HashMap;
 
 use instant::Instant;
 use na::{Point2, Point3, Vector2, Vector3};
@@ -448,7 +448,7 @@ impl Window {
     /// # Arguments
     /// * `title` - the window title
     pub fn new_hidden(title: &str) -> Window {
-        Window::do_new(title, true, DEFAULT_WIDTH, DEFAULT_HEIGHT)
+        Window::do_new(title, true, true, DEFAULT_WIDTH, DEFAULT_HEIGHT)
     }
 
     /// Opens a window then calls a user-defined procedure.
@@ -456,7 +456,7 @@ impl Window {
     /// # Arguments
     /// * `title` - the window title
     pub fn new(title: &str) -> Window {
-        Window::do_new(title, false, DEFAULT_WIDTH, DEFAULT_HEIGHT)
+        Window::do_new(title, false, false, DEFAULT_WIDTH, DEFAULT_HEIGHT)
     }
 
     /// Opens a window with a custom size then calls a user-defined procedure.
@@ -466,13 +466,13 @@ impl Window {
     /// * `width` - the window width.
     /// * `height` - the window height.
     pub fn new_with_size(title: &str, width: u32, height: u32) -> Window {
-        Window::do_new(title, false, width, height)
+        Window::do_new(title, false, false, width, height)
     }
 
     // FIXME: make this pub?
-    fn do_new(title: &str, hide: bool, width: u32, height: u32) -> Window {
+    fn do_new(title: &str, hide: bool, headless: bool, width: u32, height: u32) -> Window {
         let (event_send, event_receive) = mpsc::channel();
-        let canvas = Canvas::open(title, hide, width, height, event_send);
+        let canvas = Canvas::open(title, hide, headless, width, height, event_send);
 
         init_gl();
 

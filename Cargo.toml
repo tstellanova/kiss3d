@@ -44,7 +44,11 @@ kiss3d_conrod = { version = "0.63", features = [ "stdweb" ], optional = true }
 
 [target.'cfg(not(any(target_arch = "wasm32", target_arch = "asmjs")))'.dependencies]
 gl = "0.11"
-glutin = "0.19"
+
+#glutin = "0.19"
+glutin = "0.21.0"
+#[dependencies.glutin]
+#path = "../glutin/glutin"
 
 # We repeat all three targets instead of any(target_arch = "wasm32", target_arch = "asmjs")
 # to avoid https://github.com/koute/stdweb/issues/135

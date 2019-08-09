@@ -40,7 +40,7 @@ pub struct WebGLCanvas {
 }
 
 impl AbstractCanvas for WebGLCanvas {
-    fn open(_: &str, _: bool, _: u32, _: u32, out_events: Sender<WindowEvent>) -> Self {
+    fn open(_: &str, _: bool, _headless: bool, _: u32, _: u32, out_events: Sender<WindowEvent>) -> Self {
         let hidpi_factor = js!{ return window.devicePixelRatio; }.try_into().unwrap();
         let canvas: CanvasElement = web::document()
             .query_selector("#canvas")
